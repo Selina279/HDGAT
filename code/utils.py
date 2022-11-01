@@ -21,12 +21,12 @@ def load_data(path, dataset):
         print(dataset)
         print(type_name)
         indexes, features, labels = [], [], []
-        with open("{}{}_content_{}".format(path, dataset, type_name), encoding='utf-8') as f:
+        with open("{}{}_content_{}.csv".format(path, dataset, type_name), encoding='utf-8') as f:
             for line in tqdm(f):
                 cache = line.strip().split(',')
                 indexes.append(np.array(cache[0], dtype=int))
-                labels.append(np.array([cache[2]], dtype=np.float32))
-                features.append(np.array(cache[3:-1]), dtype=np.float32)
+                labels.append(np.array(cache[2], dtype=int))
+                features.append(np.array(cache[3:], dtype=np.float32))
             features = np.stack(features)
             features = normalize(features)
             if not features_block:
@@ -34,10 +34,11 @@ def load_data(path, dataset):
                 features = dense_tensor_to_sparse(features)
 
             features_list.append(features)
+        print(len(indexes), len(labels), features.size)
 
         if type_name == type_have_label:
             labels = np.stack(labels)
-            labels = encode_onehot(labels)
+            # labels = encode_onehot(labels)
         Labels = torch.LongTensor(labels)
         print("label matrix shape: {}".format(Labels.shape))
 
@@ -57,7 +58,7 @@ def load_data(path, dataset):
         # 生成邻接矩阵
         adj_list = [[None for _ in range(len(type_list))] for __ in range(len(type_list))]
         # 处理边 建图
-        edges_unordered = np.genfromtxt("{}{}.cites".format(path, dataset), dtype=np.int32)
+        edges_unordered = np.genfromtxt("{}{}_map.csv".format(path, dataset), dtype=np.int32, encoding='utf-8')
         adj_all = sp.lil_matrix(np.zeros((len_all, len_all)), dtype=np.float32)
 
         for i1 in range(len(type_list)):
@@ -222,3 +223,12 @@ def resample(train, val, test: torch.LongTensor, path, tidx_map, rewrite = True)
             with open(path+filenames[i]+"_inductive.map", "w") as f:
                 f.write("\n".join(map(str, map(tidx_map_reverse.get, ans[i].numpy()))))
     return tidx_train, tidx_unlabeled, tidx_val, tidx_test
+
+
+dataset = 'WU3D'
+
+if __name__ == '__main__':
+    # sys.stdout = Logger("{}.log".format(dataset))
+    path = '../data/' + dataset + '/'
+    adj, features, labels, tidx_train_ori, tidx_val_ori, tidx_test_ori, tidx_map = load_data(path=path, dataset=dataset)
+    print(adj)
