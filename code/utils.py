@@ -21,7 +21,7 @@ def load_data(path, dataset):
         print(dataset)
         print(type_name)
         indexes, features, labels = [], [], []
-        with open("{}{}content_{}".format(path, dataset, type_name), encoding='utf-8') as f:
+        with open("{}{}_content_{}".format(path, dataset, type_name), encoding='utf-8') as f:
             for line in tqdm(f):
                 cache = line.strip().split(',')
                 indexes.append(np.array(cache[0], dtype=int))
