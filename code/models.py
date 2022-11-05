@@ -13,6 +13,7 @@ class HGAT(nn.Module):
         super(HGAT, self).__init__()
         self.para_init()
         self.attention = True
+        self.lower_attention = True
         self.embedding = False
         self.write_emb = False
         if self.write_emb:
@@ -33,7 +34,7 @@ class HGAT(nn.Module):
         dim_2nd = nclass + 2
 
         self.gc2 = nn.ModuleList()
-        if not self.lower_attetion:
+        if not self.lower_attention:
             self.gc1 = nn.ModuleList()
             for t in range(self.ntype):
                 self.gc1.append(GraphConvolution(n_in[t], dim_1st, bias = False))
@@ -41,10 +42,10 @@ class HGAT(nn.Module):
                 stdv = 1 / math.sqrt(dim_1st)
                 self.bias1.data.uniform(-stdv, stdv)
         else:
-            self.gc1 = GraphConvolution(n_in, dim_1st, gamma=0.1)
+            self.gc1 = GraphAttentionConvolution(n_in, dim_1st, gamma=0.1)
         self.gc2.append(GraphConvolution(dim_1st, dim_2nd, bias=True))
 
-        if self.attettion:
+        if self.attention:
             self.at1 = nn.ModuleList()
             self.at2 = nn.ModuleList()
             for t in range(self.ntype):

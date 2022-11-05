@@ -69,9 +69,6 @@ def load_data(path, dataset):
         len_list = [len(tidx2type[t]) for t in type_list]
         type2len = {t: len(tidx2type[t]) for t in type_list}
         len_all = sum(len_list)
-        print(len(len_list))
-
-
         print('Building graph...')
         # 生成邻接矩阵
         adj_list = [[None for _ in range(len(type_list))] for __ in range(len(type_list))]
@@ -98,7 +95,6 @@ def load_data(path, dataset):
                     else:
                         adj = sp.coo_matrix((type2len[t1], type2len[t2]), dtype=np.float32)
 
-                    print(adj_all)
                     # adj_all[sum(len_list[:i1]): sum(len_list[:i1+1]),
                     #         sum(len_list[:i2]): sum(len_list[:i2+1])] = adj.tolil()
 

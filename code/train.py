@@ -17,7 +17,7 @@ from .print_log import Logger
 import warnings
 warnings.filterwarnings("ignore")
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "cpu"
 REPEAT = 1
 dataset = 'WU3D'
 
