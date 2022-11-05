@@ -8,7 +8,7 @@ import os
 
 def load_data(path, dataset):
     print('Loading {} dataset...'.format(dataset))
-    type_list = ['tweet', 'topic', 'emotion']
+    type_list = ['tweet', 'emotion', 'topic']
     type_have_label = 'tweet'
     features_list = []
     tidx_map_list = []
@@ -22,23 +22,42 @@ def load_data(path, dataset):
         print(type_name)
         indexes, features, labels = [], [], []
         with open("{}{}_content_{}.csv".format(path, dataset, type_name), encoding='utf-8') as f:
-            for line in tqdm(f):
-                cache = line.strip().split(',')
-                indexes.append(np.array(cache[0], dtype=int))
-                labels.append(np.array(cache[2], dtype=int))
-                features.append(np.array(cache[3:], dtype=np.float32))
-            features = np.stack(features)
-            features = normalize(features)
+            if type_name == 'tweet':
+                for line in tqdm(f.readlines()[:9291]):
+                    cache = line.strip().split(',')
+                    indexes.append(np.array(cache[0], dtype=int))
+                    labels.append(np.array([cache[3]], dtype=str))
+                    features.append(np.array(cache[4:], dtype=np.float32))
+                features = np.stack(features)
+                features = normalize(features)
+            elif type_name == 'topic':
+                for line in tqdm(f.readlines()[9291:18205]):
+                    cache = line.strip().split(',')
+                    indexes.append(np.array(cache[0], dtype=int))
+                    labels.append(np.array(cache[3], dtype=str))
+                    features.append(np.array(cache[4:], dtype=np.float32))
+                features = np.stack(features)
+                features = normalize(features)
+            else:
+                for line in tqdm(f.readlines()[18205:]):
+                    cache = line.strip().split(',')
+                    indexes.append(np.array(cache[0], dtype=int))
+                    labels.append(np.array(cache[3], dtype=str))
+                    features.append(np.array(cache[4:], dtype=np.float32))
+                features = np.stack(features)
+                features = normalize(features)
             if not features_block:
                 features = torch.FloatTensor(np.array(features))
                 features = dense_tensor_to_sparse(features)
 
             features_list.append(features)
-        print(len(indexes), len(labels), features.size)
+        print(len(indexes), len(labels), len(features))
 
         if type_name == type_have_label:
             labels = np.stack(labels)
-            # labels = encode_onehot(labels)
+            print(labels.size)
+            labels = encode_onehot(labels)
+            print(labels)
         Labels = torch.LongTensor(labels)
         print("label matrix shape: {}".format(Labels.shape))
 
@@ -52,13 +71,18 @@ def load_data(path, dataset):
         len_list = [len(tidx2type[t]) for t in type_list]
         type2len = {t: len(tidx2type[t]) for t in type_list}
         len_all = sum(len_list)
+        print(len(len_list))
 
 
         print('Building graph...')
         # 生成邻接矩阵
         adj_list = [[None for _ in range(len(type_list))] for __ in range(len(type_list))]
         # 处理边 建图
-        edges_unordered = np.genfromtxt("{}{}_map.csv".format(path, dataset), dtype=np.int32, encoding='utf-8')
+        edges_unordered = []
+        edge_fo = open("{}{}_map.csv".format(path, dataset), 'r', encoding='utf8')
+        for line in edge_fo:
+            line = line.split()
+            edges_unordered.append([w for w in line])
         adj_all = sp.lil_matrix(np.zeros((len_all, len_all)), dtype=np.float32)
 
         for i1 in range(len(type_list)):
@@ -75,16 +99,18 @@ def load_data(path, dataset):
                                             shape=(type2len[t1], type2len[t2]), dtype=np.float32)
                     else:
                         adj = sp.coo_matrix((type2len[t1], type2len[t2]), dtype=np.float32)
-                    adj_all[sum(len_list[:i1]): sum(len_list[:i1+1]),
-                            sum(len_list[:i2]): sum(len_list[:i2+1])] = adj.tolil()
+
+                    print(adj_all)
+                    # adj_all[sum(len_list[:i1]): sum(len_list[:i1+1]),
+                    #         sum(len_list[:i2]): sum(len_list[:i2+1])] = adj.tolil()
 
                 elif i1 < i2:
                     edges = []
                     for edge in edges_unordered:
                         if (edge[0] in tidx2type[t1] and edge[1] in tidx2type[t2]):
                             edges.append([tidx_map_list[i1].get(edge[0]), tidx_map_list[i2].get(edge[1])])
-                        elif (edge[1] in tidx2type[t1] and edge[0] in tidx2type[t2]):
-                            edges.append([tidx_map_list[i1].get(edge[1]), tidx_map_list[i2].get(edge[0])])
+                        # elif (edge[1] in tidx2type[t1] and edge[0] in tidx2type[t2]):
+                        #     edges.append([tidx_map_list[i1].get(edge[1]), tidx_map_list[i2].get(edge[0])])
                     edges = np.array(edges)
                     if len(edges) > 0:
                         adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),
@@ -92,12 +118,12 @@ def load_data(path, dataset):
                     else:
                         adj = sp.coo_matrix((type2len[t1], type2len[t2]), dtype=np.float32)
 
-                    adj_all[
-                        sum(len_list[:i1]): sum(len_list[:i1+1]),
-                        sum(len_list[:i2]): sum(len_list[:i2+1])] = adj.tolil()
-                    adj_all[
-                        sum(len_list[:i2]): sum(len_list[:i2 + 1]),
-                        sum(len_list[:i1]): sum(len_list[:i1 + 1])] = adj.T.tolil()
+                    # adj_all[
+                    #     sum(len_list[:i1]): sum(len_list[:i1+1]),
+                    #     sum(len_list[:i2]): sum(len_list[:i2+1])] = adj.tolil()
+                    # adj_all[
+                    #     sum(len_list[:i2]): sum(len_list[:i2 + 1]),
+                    #     sum(len_list[:i1]): sum(len_list[:i1 + 1])] = adj.T.tolil()
 
                 else:
                     pass
@@ -112,7 +138,7 @@ def load_data(path, dataset):
                             sum(len_list[:i2]): sum(len_list[:i2 + 1])]
                 )
 
-        print("Num of edges: {}".format(len(adj_all.nonsero()[0])))
+        print("Num of edges: {}".format(adj_all.getnnz()))  # .nonsero()[0]
         tidx_train, tidx_val, tidx_test = load_divide_tidx(path, tidx_map_list[0])
         return adj_list, features_list, Labels, tidx_train, tidx_val, tidx_test, tidx_map_list[0]
 
@@ -128,16 +154,22 @@ def load_divide_tidx(path, tidx_map):
     tidx_train = []
     tidx_val = []
     tidx_test = []
-    with open(path + 'train.map', 'r') as f:
+    with open(path + 'train.csv', 'r', encoding='utf-8-sig') as f:
         for line in f:
             tidx_train.append(tidx_map.get(int(line.strip('\n'))))
-    with open(path + 'vali.map', 'r') as f:  # vali
+
+    print("tidx_train", tidx_train)
+
+    with open(path + 'val.csv', 'r', encoding='utf-8-sig') as f:
         for line in f:
             tidx_val.append(tidx_map.get(int(line.strip('\n'))))
-    with open(path + 'test.map', 'r') as f:
+    print("tidx_val", tidx_val)
+
+    with open(path + 'test.csv', 'r', encoding='utf-8-sig') as f:
         for line in f:
             tidx_test.append(tidx_map.get(int(line.strip('\n'))))
 
+    print("tidx_test", tidx_test)
     shuffle(tidx_val)
     # idx_val = idx_val[:80]
 
