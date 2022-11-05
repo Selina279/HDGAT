@@ -23,7 +23,7 @@ def load_data(path, dataset):
         indexes, features, labels = [], [], []
         with open("{}{}_content_{}.csv".format(path, dataset, type_name), encoding='utf-8') as f:
             if type_name == 'tweet':
-                for line in tqdm(f.readlines()[:9291]):
+                for line in tqdm(f):  # f.readlines()[:9291]
                     cache = line.strip().split(',')
                     indexes.append(np.array(cache[0], dtype=int))
                     labels.append(np.array([cache[3]], dtype=str))
@@ -55,9 +55,7 @@ def load_data(path, dataset):
 
         if type_name == type_have_label:
             labels = np.stack(labels)
-            print(labels.size)
             labels = encode_onehot(labels)
-            print(labels)
         Labels = torch.LongTensor(labels)
         print("label matrix shape: {}".format(Labels.shape))
 
@@ -157,19 +155,13 @@ def load_divide_tidx(path, tidx_map):
     with open(path + 'train.csv', 'r', encoding='utf-8-sig') as f:
         for line in f:
             tidx_train.append(tidx_map.get(int(line.strip('\n'))))
-
-    print("tidx_train", tidx_train)
-
     with open(path + 'val.csv', 'r', encoding='utf-8-sig') as f:
         for line in f:
             tidx_val.append(tidx_map.get(int(line.strip('\n'))))
-    print("tidx_val", tidx_val)
-
     with open(path + 'test.csv', 'r', encoding='utf-8-sig') as f:
         for line in f:
             tidx_test.append(tidx_map.get(int(line.strip('\n'))))
 
-    print("tidx_test", tidx_test)
     shuffle(tidx_val)
     # idx_val = idx_val[:80]
 
@@ -256,11 +248,3 @@ def resample(train, val, test: torch.LongTensor, path, tidx_map, rewrite = True)
                 f.write("\n".join(map(str, map(tidx_map_reverse.get, ans[i].numpy()))))
     return tidx_train, tidx_unlabeled, tidx_val, tidx_test
 
-
-dataset = 'WU3D'
-
-if __name__ == '__main__':
-    # sys.stdout = Logger("{}.log".format(dataset))
-    path = '../data/' + dataset + '/'
-    adj, features, labels, tidx_train_ori, tidx_val_ori, tidx_test_ori, tidx_map = load_data(path=path, dataset=dataset)
-    print(adj)
