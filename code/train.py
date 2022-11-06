@@ -1,3 +1,7 @@
+import os, gc, sys
+from code.utils import load_data, accuracy, dense_tensor_to_sparse, resample
+from code.models import HGAT
+from code.print_log import Logger
 import time
 import argparse
 import numpy as np
@@ -10,12 +14,11 @@ import torch.nn.functional as F
 import torch.optim as optim
 from sklearn.metrics import precision_recall_fscore_support
 from sklearn.metrics import accuracy_score
-from .utils import load_data, accuracy, dense_tensor_to_sparse, resample
-from .models import HGAT
-import os, gc, sys
-from .print_log import Logger
 import warnings
 warnings.filterwarnings("ignore")
+
+
+
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "cpu"
 REPEAT = 1
