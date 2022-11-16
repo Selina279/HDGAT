@@ -16,13 +16,13 @@ from sklearn.metrics import precision_recall_fscore_support
 from sklearn.metrics import accuracy_score
 import warnings
 warnings.filterwarnings("ignore")
-
-
-
+from torch.utils.tensorboard import SummaryWriter
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "cpu"
-REPEAT = 1
-dataset = 'WU3D'
+REPEAT = 3
+dataset = 'WU3D150'
+log_path = './view/log_REPEAT_/'+ str(REPEAT)+'/'
+writer = SummaryWriter(log_path)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--no_cuda', action='store_true', default=False,
@@ -180,6 +180,8 @@ def test(epoch, input_adj_test, input_features_test, tidx_out_test, tidx_test):
         loss_test = LOSS(output[tidx_out_test], labels[tidx_test])
         print(' | loss: {:.4f}'.format(loss_test.item()), end='')
         acc_test, f1_test = evaluate(output[tidx_out_test], labels[tidx_test])
+    writer.add_scalar('Test/loss', loss_test, epoch)
+    writer.add_scalar('Test/acc', acc_test, epoch)
     print(' | time: {:.4f}s'.format(time.time() - t))
     loss_list[epoch] += [loss_test.item()]
     return float(acc_test.item()), float(f1_test.item())
